@@ -31,7 +31,7 @@ $for(classoption)$
 $endfor$
 ]{article}
 
-%% ---------- page ----------------------------------------------------------
+%% ---------- page ---------------------------------------------------------
 \usepackage[
 $if(geometry)$
   $for(geometry)$$geometry$$sep$,$endfor$
@@ -41,10 +41,8 @@ $else$
 $endif$
 ]{geometry}
 
-%% ---------- fonts (pdflatex) --------------------------------------------
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{textcomp}
+%% ---------- fonts (pdflatex) ---------------------------------------------
+\usepackage[T1]{fontenc}  % UTF-8 input and textcomp are LaTeX defaults since 2018/2020
 \usepackage{amsmath,amssymb}
 $if(fontfamily)$
 \usepackage[$for(fontfamilyoptions)$$fontfamilyoptions$$sep$,$endfor$]{$fontfamily$}
@@ -71,12 +69,13 @@ $endif$
 \definecolor{zebra}{gray}{0.91}
 \definecolor{rulegray}{gray}{0}
 
-%% ---------- paragraphs, headings, lists ---------------------------------
+%% ---------- paragraphs, headings, lists ----------------------------------
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{2.5pt plus 1pt minus 1pt}
 \setlength{\emergencystretch}{3em}
 \raggedbottom
-\clubpenalty=1500 \widowpenalty=1500
+\clubpenalty=1500
+\widowpenalty=1500
 \setcounter{secnumdepth}{$if(numbersections)$$if(secnumdepth)$$secnumdepth$$else$3$endif$$else$-\maxdimen$endif$}
 
 \makeatletter
@@ -119,7 +118,7 @@ $endif$
 \makeatother
 % formula in its own paragraph (the Lua filter replaces a lone $$...$$ with this)
 \newcommand{\cpdisplay}[1]{\par\nobreak\addvspace{2pt}%
-  {\centering$$\displaystyle #1$$\par}\addvspace{3pt}}
+  {\centering\(\displaystyle #1\)\par}\addvspace{3pt}}
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
@@ -134,7 +133,6 @@ $endif$
 \usepackage{longtable,booktabs,array,calc,etoolbox}
 \usepackage{caption}
 \captionsetup{font=small,skip=3pt}
-\captionsetup[table]{skip=3pt}
 \newcounter{none}
 \makeatletter
 \patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
@@ -189,7 +187,7 @@ $highlighting-macros$
 \makeatother
 $endif$
 
-%% ---------- strikeout / underline / ==highlight== ---------------------------
+%% ---------- strikeout / underline / ==highlight== ------------------------
 $if(strikeout)$
 % pandoc uses soul (missing from BasicTeX); without it, emulate with ulem
 \IfFileExists{soul.sty}{\usepackage{soul}}{\usepackage[normalem]{ulem}}
@@ -202,7 +200,7 @@ $if(strikeout)$
 \makeatother
 $endif$
 
-%% ---------- CSL citations -------------------------------------------------
+%% ---------- CSL citations ------------------------------------------------
 $if(csl-refs)$
 \NewDocumentCommand\citeproctext{}{}
 \NewDocumentCommand\citeproc{mm}{%
@@ -233,7 +231,7 @@ $if(csl-refs)$
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 $endif$
 
-%% ---------- language -------------------------------------------------------
+%% ---------- language -----------------------------------------------------
 $if(lang)$
 \usepackage[shorthands=off$for(babeloptions)$,$babeloptions$$endfor$,$babel-lang$]{babel}
 $endif$
@@ -242,7 +240,7 @@ $if(toc)$
 \usepackage{multicol}
 $endif$
 
-%% ---------- footer: title on the left, page on the right ------------------
+%% ---------- footer: title on the left, page on the right -----------------
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
@@ -251,7 +249,8 @@ $endif$
 $if(footer)$
 \fancyfoot[L]{\footnotesize\color{muted}$if(title)$$title$$endif$}
 \fancyfoot[R]{\footnotesize\color{muted}\thepage\,/\,\pageref*{LastPage}}
-\AtEndDocument{\label{LastPage}}
+% lastpage handles floats at the end correctly; BasicTeX lacks it
+\IfFileExists{lastpage.sty}{\usepackage{lastpage}}{\AtEndDocument{\label{LastPage}}}
 $endif$
 
 $for(header-includes)$
@@ -278,7 +277,7 @@ $endif$
 
 \begin{document}
 
-%% ---------- document heading (no title page) -----------------
+%% ---------- document heading (no title page) -----------------------------
 $if(title)$
 {\noindent\Large\bfseries\color{accent}$title$\par}
 $if(subtitle)$

@@ -3,9 +3,17 @@ nfc.lua — recomposes combining accents (Unicode NFD -> NFC).
 
 macOS/iCloud hands over decomposed file names ("ç" = "c" + U+0327), and
 pdflatex rejects combining accents. Used by compact-print.lua.
+
+Only canonical composition of base + mark pairs is done (no reordering of
+multiple marks), which covers Latin text. The table was generated with:
+
+  for cp in [*range(0xC0, 0x250), *range(0x1E00, 0x1F00)]:
+      d = unicodedata.decomposition(chr(cp)).split()
+      if len(d) == 2 and not d[0].startswith("<") and 0x300 <= int(d[1], 16) <= 0x36F:
+          print(d[0], d[1], hex(cp))     # keeping pairs that NFC recomposes
 ]==]
 
--- (base, combining accent) pairs -> composed character; generated from unicodedata
+-- (base, combining mark) -> composed character, three numbers per entry
 local COMPOSE_PAIRS = {
   0x41,0x300,0xC0, 0x41,0x301,0xC1, 0x41,0x302,0xC2, 0x41,0x303,0xC3,
   0x41,0x308,0xC4, 0x41,0x30A,0xC5, 0x43,0x327,0xC7, 0x45,0x300,0xC8,
@@ -142,21 +150,26 @@ local COMPOSE_PAIRS = {
 
 local COMPOSE = {}
 for i = 1, #COMPOSE_PAIRS, 3 do
-  COMPOSE[COMPOSE_PAIRS[i] * 0x10000 + COMPOSE_PAIRS[i + 1]] = COMPOSE_PAIRS[i + 2]
+  COMPOSE[COMPOSE_PAIRS[i] << 16 | COMPOSE_PAIRS[i + 1]] = COMPOSE_PAIRS[i + 2]
 end
 
--- combining accents U+0300–U+036F start with bytes 0xCC/0xCD in UTF-8
-return function(s)
+-- table.unpack has a stack limit; convert code points in chunks
+local CHUNK = 200
+
+--- Returns `s` with base + combining mark pairs composed (NFC for Latin text).
+local function nfc(s)
+  -- marks U+0300–U+036F are encoded with lead byte 0xCC or 0xCD: fast path
   if type(s) ~= "string" or not s:find("[\204\205]") then return s end
-  local out = {}
+  local codes = {}
   for _, cp in utf8.codes(s) do
-    local prev = out[#out]
-    local composed = prev and COMPOSE[prev * 0x10000 + cp]
-    if composed then out[#out] = composed else out[#out + 1] = cp end
+    local composed = codes[#codes] and COMPOSE[codes[#codes] << 16 | cp]
+    if composed then codes[#codes] = composed else codes[#codes + 1] = cp end
   end
   local parts = {}
-  for i = 1, #out, 200 do
-    parts[#parts + 1] = utf8.char(table.unpack(out, i, math.min(i + 199, #out)))
+  for i = 1, #codes, CHUNK do
+    parts[#parts + 1] = utf8.char(table.unpack(codes, i, math.min(i + CHUNK - 1, #codes)))
   end
   return table.concat(parts)
 end
+
+return nfc
