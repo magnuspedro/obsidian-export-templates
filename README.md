@@ -1,4 +1,4 @@
-# Obsidian LaTeX Templates
+# Obsidian Export Templates
 
 **English** · [Português](README.pt-BR.md)
 
