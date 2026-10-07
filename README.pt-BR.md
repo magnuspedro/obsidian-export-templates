@@ -43,7 +43,7 @@ O menu do plugin é fixo no `main.js`, por isso o script edita esse arquivo. O o
 
 **Atualizar o plugin apaga o patch**: depois de cada atualização, rode `install.py` de novo. O script é idempotente.
 
-O script acha sozinho o vault no iCloud. Opções: `--plugin <vault>/.obsidian/plugins/obsidian-enhancing-export` quando o vault estiver em outro lugar ou houver mais de um; `--revert` para desfazer.
+O script usa o vault aberto no Obsidian (de `~/Library/Application Support/obsidian/obsidian.json`), ou o único vault com o plugin, e mostra a pasta do plugin escolhida. Opções: `--plugin <vault>/.obsidian/plugins/obsidian-enhancing-export` para escolher outro vault; `--revert` para desfazer.
 
 ## Criar um template novo
 

@@ -23,7 +23,8 @@ import sys
 from pathlib import Path
 
 PLUGIN_SUBDIR = ".obsidian/plugins/obsidian-enhancing-export"
-ICLOUD_VAULTS = Path.home() / "Library/Mobile Documents/iCloud~md~obsidian"
+# Obsidian's list of known vaults (macOS); the open one has "open": true.
+OBSIDIAN_CONFIG = Path.home() / "Library/Application Support/obsidian/obsidian.json"
 REPO = Path(__file__).resolve().parent
 TESTED_PLUGIN_VERSION = "1.11.3"
 
@@ -53,21 +54,43 @@ class InstallError(Exception):
 
 
 def find_plugin(explicit: Path | None) -> Path:
-    """Return the plugin folder, given explicitly or found among iCloud vaults."""
+    """Return the plugin folder, given explicitly or found among Obsidian's vaults.
+
+    Prefers the vault Obsidian has open; otherwise the only vault with the plugin.
+    """
     if explicit is not None:
         plugin = explicit.expanduser()
     else:
-        found = sorted(ICLOUD_VAULTS.glob(f"*/{PLUGIN_SUBDIR}"))
-        if len(found) != 1:
+        try:
+            vaults = json.loads(OBSIDIAN_CONFIG.read_text(encoding="utf-8"))["vaults"]
+        except (OSError, ValueError, KeyError) as err:
             msg = (
-                f"found {len(found)} vaults with Enhancing Export in {ICLOUD_VAULTS}; "
+                f"cannot read {OBSIDIAN_CONFIG} ({err}); "
                 f"pass --plugin <vault>/{PLUGIN_SUBDIR}"
             )
+            raise InstallError(msg) from err
+        found = [
+            (Path(v["path"]) / PLUGIN_SUBDIR, bool(v.get("open")))
+            for v in vaults.values()
+            if (Path(v["path"]) / PLUGIN_SUBDIR / "main.js").is_file()
+        ]
+        opened = [p for p, is_open in found if is_open]
+        if len(opened) == 1:
+            plugin = opened[0]
+        elif len(found) == 1:
+            plugin = found[0][0]
+        else:
+            listed = "".join(f"\n  {p}" for p, _ in found)
+            msg = (
+                f"found {len(found)} vaults with Enhancing Export, "
+                "none open in Obsidian; "
+                f"pass --plugin <vault>/{PLUGIN_SUBDIR}{listed}"
+            )
             raise InstallError(msg)
-        plugin = found[0]
     if not (plugin / "main.js").is_file():
         msg = f"plugin not found at {plugin}"
         raise InstallError(msg)
+    print(f"plugin: {plugin}")
     return plugin
 
 
@@ -174,7 +197,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--plugin",
         type=Path,
         metavar="DIR",
-        help=f"plugin folder (<vault>/{PLUGIN_SUBDIR}); default: find it in iCloud",
+        help=f"plugin folder (<vault>/{PLUGIN_SUBDIR}); default: the open vault's",
     )
     parser.add_argument(
         "--revert",

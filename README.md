@@ -43,7 +43,7 @@ The plugin's menu is hard-coded in `main.js`, so the script edits that file. The
 
 **Updating the plugin removes the patch**: run `install.py` again after every update. The script is idempotent.
 
-The script finds the vault in iCloud on its own. Options: `--plugin <vault>/.obsidian/plugins/obsidian-enhancing-export` when the vault is elsewhere or there are several; `--revert` to undo.
+The script uses the vault open in Obsidian (from `~/Library/Application Support/obsidian/obsidian.json`), or the only vault with the plugin, and prints the plugin folder it chose. Options: `--plugin <vault>/.obsidian/plugins/obsidian-enhancing-export` to pick another vault; `--revert` to undo.
 
 ## Creating a new template
 
